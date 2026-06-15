@@ -1,29 +1,36 @@
 import boto3
-import json
-from boto3.dynamodb.conditions import Key
 
 def lambda_handler(event, context):
-    # Parsear body
-    body = event['body']
-    if isinstance(body, str):
-        body = json.loads(body)
-    
-    # Entrada
-    tenant_id = body['tenant_id']
+    # Entrada - vienen del PATH de la URL
+    tenant_id = event['path']['tenant_id']
+    alumno_id = event['path']['alumno_id']
     
     # Proceso
     dynamodb = boto3.resource('dynamodb')
     table = dynamodb.Table('t_alumnos')
-    response = table.query(
-        KeyConditionExpression=Key('tenant_id').eq(tenant_id)
+    
+    # Verificar que existe
+    check = table.get_item(
+        Key={
+            'tenant_id': tenant_id,
+            'alumno_id': alumno_id
+        }
     )
-    items = response['Items']
-    num_reg = response['Count']
+    if 'Item' not in check:
+        return {
+            'statusCode': 404,
+            'mensaje': f'Alumno {alumno_id} no encontrado en tenant {tenant_id}'
+        }
+    
+    table.delete_item(
+        Key={
+            'tenant_id': tenant_id,
+            'alumno_id': alumno_id
+        }
+    )
     
     # Salida
     return {
         'statusCode': 200,
-        'tenant_id': tenant_id,
-        'num_reg': num_reg,
-        'alumnos': items
+        'mensaje': f'Alumno {alumno_id} eliminado correctamente'
     }
