@@ -1,10 +1,16 @@
-import boto3  # import Boto3
-from boto3.dynamodb.conditions import Key  # import Boto3 conditions
+import boto3
+import json
+from boto3.dynamodb.conditions import Key
 
 def lambda_handler(event, context):
-    # Entrada (json)
-    print(event)
-    tenant_id = event['body']['tenant_id']
+    # Parsear body
+    body = event['body']
+    if isinstance(body, str):
+        body = json.loads(body)
+    
+    # Entrada
+    tenant_id = body['tenant_id']
+    
     # Proceso
     dynamodb = boto3.resource('dynamodb')
     table = dynamodb.Table('t_alumnos')
@@ -13,11 +19,11 @@ def lambda_handler(event, context):
     )
     items = response['Items']
     num_reg = response['Count']
-    print(items)
-    # Salida (json)
+    
+    # Salida
     return {
         'statusCode': 200,
-        'tenant_id':tenant_id,
+        'tenant_id': tenant_id,
         'num_reg': num_reg,
         'alumnos': items
     }
